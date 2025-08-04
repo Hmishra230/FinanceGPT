@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceGPT Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: calc(200px + 100%) 0;
+            }
+        }
+
+        .animate-fadeInUp {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .animate-slideInLeft {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        .animate-slideInRight {
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .animate-pulse-custom {
+            animation: pulse 2s infinite;
+        }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .health-score-circle {
+            background: conic-gradient(from 0deg, #10b981, #fbbf24, #ef4444);
+            border-radius: 50%;
+            padding: 3px;
+        }
+
+        .health-score-inner {
+            background: white;
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .transaction-item {
+            transition: all 0.2s ease;
+        }
+
+        .transaction-item:hover {
+            background-color: #f3f4f6;
+            transform: translateX(5px);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .chart-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
+            z-index: -1;
+            border-radius: 12px;
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <header class="gradient-bg text-white p-8 rounded-2xl shadow-2xl mb-8 animate-fadeInUp">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+                <div>
+                    <h1 class="text-4xl lg:text-5xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+                        FinanceGPT Dashboard
+                    </h1>
+                    <p class="text-blue-100 text-lg">Your AI-powered financial companion</p>
+                </div>
+                <div class="flex flex-col items-end space-y-2">
+                    <div class="health-score-circle w-20 h-20 animate-pulse-custom">
+                        <div class="health-score-inner">
+                            <span id="health-score-number" class="text-2xl font-bold text-gray-700">--</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/add_expense" class="px-4 py-2 bg-white bg-opacity-20 text-white font-semibold rounded-lg hover:bg-opacity-30 transition-all duration-300 glass-effect">Add New Transaction</a>
+                        <div class="health-score-circle w-20 h-20 animate-pulse-custom">
+                            <div class="health-score-inner">
+                                <span id="health-score-number" class="text-2xl font-bold text-gray-700">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="health-score" class="text-xl font-semibold text-center lg:text-right mt-2">
+                        Financial Health Score: Loading...
+                    </div>
+                </div>
+            </div>
+            <div id="monthly-summary" class="mt-6 text-lg bg-white bg-opacity-20 rounded-lg p-4 glass-effect">
+                Monthly Summary: Loading...
+            </div>
+        </header>
+
+        <div class="flex flex-wrap -mx-4">
+            <!-- Main Panel -->
+            <main class="w-full lg:w-2/3 px-4 mb-6 lg:mb-0 animate-slideInLeft">
+                <div class="bg-white p-8 rounded-2xl shadow-xl card-hover chart-container">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800 flex items-center">
+                            <svg class="w-8 h-8 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            Spending Trends
+                        </h2>
+                        <div class="flex space-x-2">
+                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse" style="animation-delay: 0.4s"></div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <canvas id="spendingChart" class="w-full h-96 rounded-lg"></canvas>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Sidebar -->
+            <aside class="w-full lg:w-1/3 px-4 animate-slideInRight">
+                <!-- Category Breakdown -->
+                <div class="bg-white p-6 rounded-2xl shadow-xl mb-6 card-hover chart-container">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                        <svg class="w-6 h-6 mr-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                        </svg>
+                        Category Breakdown
+                    </h2>
+                    <canvas id="categoryChart" class="w-full h-64"></canvas>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-white p-6 rounded-2xl shadow-xl card-hover">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                        <svg class="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                        Recent Transactions
+                    </h2>
+                    <div class="space-y-3" id="recent-transactions-container">
+                        <ul id="recent-transactions" class="space-y-3"></ul>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Insights Panel -->
+        <section class="mt-8 bg-white p-8 rounded-2xl shadow-xl animate-fadeInUp card-hover" style="animation-delay: 0.4s">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800 flex items-center">
+                <svg class="w-8 h-8 mr-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                AI-Generated Insights
+                <span class="ml-3 px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm rounded-full">AI Powered</span>
+            </h2>
+            <div id="insights" class="text-gray-600 leading-relaxed">
+                <div class="flex items-center space-x-3">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                    <span>Analyzing your financial data...</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        async function fetchDashboardData() {
+            try {
+                const [dashboardRes, healthScoreRes, insightsRes] = await Promise.all([
+                    fetch('/api/dashboard/user1'),
+                    fetch('/api/health-score/user1'),
+                    fetch('/api/insights/user1')
+                ]);
+
+                if (!dashboardRes.ok || !healthScoreRes.ok || !insightsRes.ok) {
+                    throw new Error('Failed to fetch all dashboard data');
+                }
+
+                const dashboardData = await dashboardRes.json();
+                const healthScoreData = await healthScoreRes.json();
+                const insightsData = await insightsRes.json();
+
+                updateDashboard(dashboardData.transactions);
+                updateHealthScore(healthScoreData.health_score);
+                updateInsights(insightsData.insights);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('health-score').innerText = 'Financial Health Score: Error';
+            }
+        }
+
+        function updateHealthScore(score) {
+            document.getElementById('health-score').innerText = `Financial Health Score: ${score}`;
+            document.getElementById('health-score-number').innerText = score;
+            
+            // Add color coding based on score
+            const numberElement = document.getElementById('health-score-number');
+            if (score >= 80) {
+                numberElement.className = 'text-2xl font-bold text-green-600';
+            } else if (score >= 60) {
+                numberElement.className = 'text-2xl font-bold text-yellow-600';
+            } else {
+                numberElement.className = 'text-2xl font-bold text-red-600';
+            }
+        }
+
+        function updateInsights(insights) {
+            const insightsContainer = document.getElementById('insights');
+            insightsContainer.innerHTML = '';
+            
+            if (insights && insights.length > 0) {
+                const insightsList = document.createElement('div');
+                insightsList.className = 'space-y-4';
+                
+                insights.forEach((insight, index) => {
+                    const insightDiv = document.createElement('div');
+                    insightDiv.className = 'flex items-start space-x-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-l-4 border-indigo-500 animate-fadeInUp';
+                    insightDiv.style.animationDelay = `${index * 0.1}s`;
+                    
+                    insightDiv.innerHTML = `
+                        <svg class="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-gray-700">${insight}</span>
+                    `;
+                    insightsList.appendChild(insightDiv);
+                });
+                insightsContainer.appendChild(insightsList);
+            } else {
+                insightsContainer.innerHTML = '<p class="text-blue-500 italic">No insights available at the moment.</p>';
+            }
+        }
+
+        function updateDashboard(transactions) {
+            // Update summary with animation
+            const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
+            const summaryElement = document.getElementById('monthly-summary');
+            summaryElement.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>Total Spending this month:</span>
+                    <span class="text-2xl font-bold text-blue bg-white bg-opacity-20 px-4 py-2 rounded-lg">
+                        $${totalSpending.toFixed(2)}
+                    </span>
+                </div>
+            `;
+
+            // Update spending chart with enhanced styling
+            const spendingCtx = document.getElementById('spendingChart').getContext('2d');
+            new Chart(spendingCtx, {
+                type: 'line',
+                data: {
+                    labels: transactions.map(t => new Date(t.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Daily Spending',
+                        data: transactions.map(t => t.amount),
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#6b7280'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#6b7280'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 8
+                        }
+                    }
+                }
+            });
+
+            // Update category chart with vibrant colors
+            const categoryData = transactions.reduce((acc, t) => {
+                acc[t.category] = (acc[t.category] || 0) + t.amount;
+                return acc;
+            }, {});
+
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryData),
+                    datasets: [{
+                        label: 'Spending by Category',
+                        data: Object.values(categoryData),
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe',
+                            '#43e97b', '#38f9d7', '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3',
+                            '#ffeaa7', '#fab1a0', '#fd79a8', '#fdcb6e'
+                        ],
+                        borderWidth: 0,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                },
+                                color: '#374151'
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // Update recent transactions with enhanced styling
+            const transactionList = document.getElementById('recent-transactions');
+            transactionList.innerHTML = '';
+            
+            transactions.slice(0, 5).forEach((t, index) => {
+                const li = document.createElement('li');
+                li.className = 'transaction-item flex justify-between items-center p-3 border border-gray-100 rounded-lg animate-fadeInUp';
+                li.style.animationDelay = `${index * 0.1}s`;
+                
+                li.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-800">${t.description}</div>
+                            <div class="text-sm text-gray-500">${new Date(t.date).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    <span class="font-bold text-lg bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                        $${t.amount.toFixed(2)}
+                    </span>
+                `;
+                transactionList.appendChild(li);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchDashboardData);
+    </script>
+    <!-- Floating Action Button -->
+    <a href="/add_expense" class="fixed bottom-8 right-8 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-110">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+    </a>
+</body>
+</html>

@@ -1,0 +1,21 @@
+user_id,date,description,amount,category
+user1,2025-07-01,Grocery Store Purchase,75.50,Food
+user1,2025-07-02,Uber Ride,12.30,Transportation
+user1,2025-07-03,Netflix Subscription,15.99,Entertainment
+user1,2025-07-04,Restaurant Dinner,42.75,Food
+user1,2025-07-05,Gas Station,35.00,Transportation
+user1,2025-07-06,Amazon Purchase,89.99,Shopping
+user1,2025-07-07,Savings Deposit,200.00,Savings
+user1,2025-07-08,Coffee Shop,5.25,Food
+user1,2025-07-09,Electric Bill,65.00,Utilities
+user1,2025-07-10,Gym Membership,40.00,Fitness
+user1,2025-07-11,Supermarket,62.10,Food
+user1,2025-07-12,Taxi Fare,18.50,Transportation
+user1,2025-07-13,Movie Tickets,25.00,Entertainment
+user1,2025-07-14,Online Course,99.99,Education
+user1,2025-07-15,Phone Bill,45.00,Utilities
+user1,2025-07-16,Clothing Store,120.00,Shopping
+user1,2025-07-17,Savings Deposit,150.00,Savings
+user1,2025-07-18,Restaurant Lunch,22.50,Food
+user1,2025-07-19,Public Transit,10.00,Transportation
+user1,2025-07-20,Streaming Service,9.99,Entertainment
